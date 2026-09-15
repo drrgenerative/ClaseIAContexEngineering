@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Simulador IA — Tokens y predicción · v4 final</title>
+<style>
+:root{
+  --bg:#06101d;--bg2:#0a1730;--panel:rgba(12,23,43,.88);--panel2:rgba(18,31,56,.94);
+  --line:rgba(155,190,255,.16);--text:#eef5ff;--muted:#9fb1cf;--blue:#63a8ff;--cyan:#6ce8c6;
+  --violet:#927cff;--gold:#ffc96b;--danger:#ff7d91;--soft:rgba(255,255,255,.055);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh;
+  background:
+    radial-gradient(circle at 10% 0%,rgba(108,232,198,.14),transparent 23%),
+    radial-gradient(circle at 95% 5%,rgba(99,168,255,.18),transparent 23%),
+    radial-gradient(circle at 55% 100%,rgba(146,124,255,.13),transparent 20%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.14;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:34px 34px;
+}
+main{max-width:1240px;margin:auto;padding:24px 18px 70px;position:relative}
+nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+nav a{color:#bdd5ff;text-decoration:none;font-weight:850}
+.version{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:.8rem;font-weight:850;color:var(--cyan)}
+.hero{
+  border:1px solid var(--line);border-radius:30px;padding:30px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  box-shadow:0 22px 70px rgba(0,0,0,.28);overflow:hidden;position:relative
+}
+.hero:after{
+  content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-100px;top:-110px;
+  background:radial-gradient(circle,rgba(99,168,255,.18),transparent 66%);pointer-events:none
+}
+.hero h1{font-size:clamp(2.25rem,5vw,4.35rem);line-height:.98;margin:8px 0 14px;max-width:940px}
+.hero p{max-width:900px;color:var(--muted);font-size:1.05rem;line-height:1.75}
+.kicker{display:inline-flex;gap:8px;align-items:center;color:var(--cyan);font-weight:900;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase}
+.kicker:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px rgba(108,232,198,.8)}
+.note{
+  margin-top:16px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,201,107,.18);
+  background:rgba(255,201,107,.07);color:#ffe3ad;line-height:1.6
+}
+.layout{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:18px}
+.card{
+  border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,var(--panel),var(--panel2));
+  box-shadow:0 16px 50px rgba(0,0,0,.24);padding:22px;min-width:0
+}
+.card h2{margin:0 0 12px;font-size:1.22rem}
+.sub{color:var(--muted);font-size:.92rem;line-height:1.6}
+label{display:block;font-weight:850;margin:0 0 8px}
+select,input[type="range"]{width:100%}
+select{
+  color:var(--text);background:#111f39;border:1px solid var(--line);border-radius:14px;padding:13px 14px;font:inherit
+}
+.tokenizer{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;min-height:54px
+}
+.token{
+  padding:8px 11px;border-radius:999px;background:rgba(99,168,255,.12);border:1px solid rgba(99,168,255,.22);font-weight:800;color:#dcecff
+}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.comparebox{
+  border:1px solid var(--line);border-radius:18px;padding:15px;background:rgba(255,255,255,.03);min-height:145px
+}
+.comparebox strong{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.red{background:var(--danger)} .dot.green{background:var(--cyan)}
+.prompt{font-size:.95rem;line-height:1.65;color:#e8f1ff}
+.metricrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.metric{font-size:.78rem;padding:7px 9px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:#cddaf0}
+.controls-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:15px}
+.ctrl{
+  border:1px solid var(--line);border-radius:18px;padding:14px;background:rgba(255,255,255,.03)
+}
+.ctrl-top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}
+.ctrl-name{font-size:.86rem;font-weight:900}.ctrl-value{color:var(--cyan);font-weight:900}
+input[type="range"]{accent-color:var(--blue)}
+.help{font-size:.76rem;color:var(--muted);line-height:1.45;margin-top:7px}
+.context-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px}
+.contextbox,.corebox{
+  border:1px solid var(--line);border-radius:20px;background:rgba(3,11,23,.38);padding:16px;min-height:250px
+}
+.contextbox h3,.corebox h3{margin:0 0 6px;font-size:1rem}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tag{padding:8px 10px;border-radius:999px;background:rgba(108,232,198,.11);border:1px solid rgba(108,232,198,.18);color:#dcfff7;font-size:.79rem;font-weight:850}
+.core-wrap{display:grid;place-items:center;min-height:185px}
+.core{
+  width:145px;height:145px;border-radius:50%;position:relative;
+  background:
+    radial-gradient(circle at 35% 30%,rgba(255,255,255,.22),transparent 22%),
+    radial-gradient(circle at 50% 50%,rgba(99,168,255,.36),rgba(99,168,255,.05) 58%,transparent 60%),
+    linear-gradient(145deg,rgba(108,232,198,.18),rgba(146,124,255,.22));
+  box-shadow:0 0 0 16px rgba(99,168,255,.04),0 0 42px rgba(99,168,255,.15);border:1px solid rgba(155,190,255,.28)
+}
+.core:before,.core:after{content:"";position:absolute;inset:22px;border-radius:50%;border:1px dashed rgba(108,232,198,.3);animation:spin 12s linear infinite}
+.core:after{inset:42px;border-color:rgba(146,124,255,.28);animation-direction:reverse;animation-duration:9s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orbit{position:absolute;padding:7px 9px;border-radius:999px;background:#0b1830;border:1px solid var(--line);font-size:.76rem;font-weight:850}
+.o1{top:-8px;left:33px}.o2{right:-23px;top:55px}.o3{bottom:-10px;left:30px}
+.pred-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:18px}
+.step-pill{padding:7px 9px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:.78rem;color:#d6e4fb}
+.prob-list{display:grid;gap:11px;margin-top:12px}
+.prob-row{display:grid;grid-template-columns:125px 1fr 52px;gap:10px;align-items:center;transition:.22s}
+.prob-row.filtered{opacity:.28}
+.prob-row.chosen{transform:scale(1.01)}
+.word{font-weight:900;overflow:hidden;text-overflow:ellipsis}
+.bar{height:11px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--violet));transition:width .35s ease}
+.prob-row.chosen .fill{background:linear-gradient(90deg,var(--cyan),var(--blue))}
+.sequence{
+  min-height:168px;border:1px solid rgba(99,168,255,.21);border-radius:20px;padding:20px;background:#071427;font-size:1.12rem;line-height:1.95
+}
+.generated{color:#a9d4ff;font-weight:850}
+.cursor{display:inline-block;width:9px;height:1.05em;background:var(--cyan);vertical-align:middle;border-radius:2px;animation:blink 1s infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.candidates{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;min-height:42px}
+.candidate{
+  padding:9px 11px;border-radius:12px;background:rgba(146,124,255,.12);border:1px solid rgba(146,124,255,.2);font-weight:850;color:#efeaff;
+  transition:.25s
+}
+.candidate.top{background:rgba(108,232,198,.13);border-color:rgba(108,232,198,.28);color:#dcfff7}
+.candidate.selected{animation:pick .58s ease forwards}
+@keyframes pick{
+  0%{transform:scale(1);box-shadow:0 0 0 rgba(108,232,198,0)}
+  45%{transform:scale(1.12);box-shadow:0 0 30px rgba(108,232,198,.38)}
+  100%{transform:scale(1);box-shadow:0 0 0 rgba(108,232,198,0)}
+}
+.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{
+  border:0;border-radius:14px;padding:12px 16px;font:inherit;font-weight:900;cursor:pointer;color:white;
+  background:linear-gradient(90deg,var(--blue),#4586ff);box-shadow:0 10px 24px rgba(99,168,255,.22)
+}
+button.secondary{background:rgba(255,255,255,.07);box-shadow:none;color:var(--text)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.explain{
+  margin-top:14px;border-radius:16px;padding:14px;border:1px solid rgba(108,232,198,.16);background:rgba(108,232,198,.06);color:#dffef7;line-height:1.6;font-size:.9rem
+}
+@media(max-width:930px){
+  .layout,.context-grid{grid-template-columns:1fr}
+  .controls-panel{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .prob-row{grid-template-columns:92px 1fr 42px}
+  .hero{padding:22px}.card{padding:17px}
+}
+
+/* --- Ajuste final: tokenización manual restaurada arriba --- */
+textarea{
+  width:100%;
+  min-height:112px;
+  resize:vertical;
+  color:var(--text);
+  background:#111f39;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:13px 14px;
+  font:inherit;
+  line-height:1.55;
+  outline:none;
+}
+textarea:focus, select:focus{
+  border-color:rgba(99,168,255,.48);
+  box-shadow:0 0 0 3px rgba(99,168,255,.08);
+}
+.token-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.token-note{
+  margin-top:12px;
+  color:var(--muted);
+  font-size:.88rem;
+  line-height:1.55;
+}
+.flow{
+  display:grid;
+  grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+  gap:8px;
+  align-items:center;
+  margin-top:16px;
+}
+.flow-node{
+  text-align:center;
+  padding:13px 8px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+  font-weight:850;
+  font-size:.86rem;
+}
+.flow-arrow{
+  color:#9bbcff;
+  font-size:1.25rem;
+  text-align:center;
+}
+.layout.onecol{grid-template-columns:1fr}
+@media(max-width:930px){
+  .flow{grid-template-columns:1fr}
+  .flow-arrow{transform:rotate(90deg)}
+}
+
+</style>
+</head>
+<body>
+<main>
+<nav>
+  <a href="index.html">← Laboratorio</a>
+  <span class="version">TOKENS · v4.1 FINAL</span>
+</nav>
+
+<section class="hero">
+  <div class="kicker">Laboratorio de lenguaje</div>
+  <h1>Del contexto a la siguiente palabra.</h1>
+  <p>
+    Explora cómo una IA generativa construye texto de manera secuencial. Cambia el contexto, modifica
+    parámetros simplificados de generación y observa cómo se redistribuyen las probabilidades antes de
+    elegir cada nuevo token.
+  </p>
+  <div class="note"><strong>Importante:</strong> es una simulación pedagógica. Los tokens, porcentajes y controles reproducen ideas reales de forma simplificada para facilitar la comprensión.</div>
+</section>
+
+
+<!-- 1. TOKENIZACIÓN: restaurada sin alterar la lógica v4 restante -->
+<section class="layout">
+  <article class="card">
+    <h2>1. Convierte texto en tokens</h2>
+    <div class="sub">
+      Escribe una instrucción y observa cómo se representa como unidades procesables.
+    </div>
+
+    <label for="textInput" style="display:block;margin-top:14px;margin-bottom:8px;font-weight:850">
+      Instrucción
+    </label>
+    <textarea id="textInput">Diseña una actividad para estudiantes de grado séptimo sobre el ciclo del agua.</textarea>
+
+    <div class="token-actions">
+      <button id="tokenizeBtn">Tokenizar</button>
+      <button id="exampleBtn" class="secondary">Cargar ejemplo</button>
+    </div>
+
+    <div class="tokenizer" id="manualTokenizer"></div>
+    <div class="sub" id="manualTokenCount" style="margin-top:10px"></div>
+
+    <div class="explain">
+      En un modelo real, un token puede ser una palabra completa, parte de una palabra,
+      un signo u otra unidad. Esta segmentación es una visualización pedagógica.
+    </div>
+  </article>
+
+  <article class="card">
+    <h2>¿Qué sucede conceptualmente?</h2>
+    <div class="sub">
+      La respuesta no aparece completa de una sola vez. El modelo procesa el contexto y vuelve
+      a calcular qué token puede venir después en cada paso.
+    </div>
+
+    <div class="flow">
+      <div class="flow-node">Texto</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Tokens</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Contexto</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Probabilidades</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Siguiente token</div>
+    </div>
+
+    <div class="explain" style="margin-top:18px">
+      <strong>Idea clave:</strong> cada token nuevo pasa a formar parte del contexto.
+      Por eso las palabras candidatas y sus probabilidades se recalculan continuamente.
+    </div>
+  </article>
+</section>
+
+
+<section class="layout">
+  <article class="card">
+    <h2>2. Selecciona el contexto</h2>
+    <label for="scenario">Escenario educativo</label>
+    <select id="scenario">
+      <option value="generic">Solicitud general</option>
+      <option value="science">Ciencias · grado 7° · ciclo del agua</option>
+      <option value="rural">Escuela rural · pocos dispositivos · 45 min</option>
+      <option value="math">Matemáticas · grado 5° · fracciones</option>
+    </select>
+
+    <div class="compare">
+      <div class="comparebox">
+        <strong><span class="dot red"></span>Poco contexto</strong>
+        <div class="prompt" id="weakPrompt"></div>
+        <div class="metricrow">
+          <span class="metric">más ambigüedad</span>
+          <span class="metric">más supuestos</span>
+        </div>
+      </div>
+      <div class="comparebox">
+        <strong><span class="dot green"></span>Contexto enriquecido</strong>
+        <div class="prompt" id="richPrompt"></div>
+        <div class="metricrow" id="richMetrics"></div>
+      </div>
+    </div>
+
+    <div class="context-grid">
+      <div class="contextbox">
+        <h3 id="sceneTitle"></h3>
+        <div class="sub" id="sceneSubtitle"></div>
+        <div class="tags" id="tags"></div>
+        <div class="explain" id="sceneExplain"></div>
+      </div>
+      <div class="corebox">
+        <h3>Contexto activo</h3>
+        <div class="sub">Una visualización conceptual de la información que condiciona la siguiente predicción.</div>
+        <div class="core-wrap">
+          <div class="core">
+            <span class="orbit o1" id="orb1"></span>
+            <span class="orbit o2" id="orb2"></span>
+            <span class="orbit o3" id="orb3"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="card">
+    <h2>3. Ajusta la generación</h2>
+    <div class="sub">Estos controles son versiones simplificadas de conceptos usados en modelos de lenguaje.</div>
+
+    <div class="controls-panel">
+      <div class="ctrl">
+        <div class="ctrl-top"><span class="ctrl-name">Temperatura</span><span class="ctrl-value" id="tempVal">0.7</span></div>
+        <input id="temperature" type="range" min="0.2" max="1.5" value="0.7" step="0.1">
+        <div class="help">Baja = distribución más concentrada. Alta = alternativas más competitivas.</div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-top"><span class="ctrl-name">Top-k</span><span class="ctrl-value" id="kVal">4</span></div>
+        <input id="topk" type="range" min="1" max="4" value="4" step="1">
+        <div class="help">Conserva solo las k opciones con mayor probabilidad.</div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-top"><span class="ctrl-name">Top-p</span><span class="ctrl-value" id="pVal">1.0</span></div>
+        <input id="topp" type="range" min="0.4" max="1" value="1" step="0.1">
+        <div class="help">Conserva las opciones superiores hasta cubrir aproximadamente esa probabilidad acumulada.</div>
+      </div>
+    </div>
+
+    <div class="pred-head">
+      <strong>Probabilidades para el siguiente token</strong>
+      <span class="step-pill" id="stepLabel">Paso 1</span>
+    </div>
+    <div class="prob-list" id="probList"></div>
+    <div class="sub" style="margin-top:10px">Las opciones atenuadas quedaron fuera por top-k o top-p. Para mantener el ejemplo coherente, la demo elige la opción viable más probable.</div>
+  </article>
+</section>
+
+<section class="layout onecol">
+  <article class="card">
+    <h2>4. Mira cómo se construye la respuesta</h2>
+    <div class="sequence" id="sequence"></div>
+    <div class="candidates" id="candidates"></div>
+    <div class="buttons">
+      <button id="next">Predecir siguiente token</button>
+      <button id="auto" class="secondary">Generar secuencia</button>
+      <button id="reset" class="secondary">Reiniciar</button>
+    </div>
+    <div class="explain" id="selectionExplain">El token resaltado es la opción viable con mayor probabilidad en este paso.</div>
+  </article>
+</section>
+</main>
+
+<script>
+(() => {
+const scenarios = {
+  generic:{
+    title:"Solicitud general", subtitle:"Poca información para decidir cómo debe ser la actividad.",
+    weak:"Diseña una actividad.",
+    rich:"Diseña una actividad para estudiantes.",
+    tags:["sin grado","sin tema","sin tiempo","sin recursos"],
+    metrics:["contexto mínimo","alta ambigüedad"], orbits:["actividad","grupo","tema"],
+    explain:"La IA conoce la intención general, pero debe asumir casi todo lo demás.",
+    base:"Diseña una actividad",
+    seq:["educativa","para","los","estudiantes","y","promueve","su","participación","."],
+    stages:[
+      [["educativa",34],["interactiva",27],["creativa",22],["breve",17]],
+      [["para",44],["con",21],["sobre",19],["que",16]],
+      [["los",51],["un",18],["equipos",16],["docentes",15]],
+      [["estudiantes",56],["niños",18],["grupos",14],["participantes",12]],
+      [["y",48],["con",21],["mediante",16],["para",15]],
+      [["promueve",38],["favorece",26],["desarrolla",19],["fortalece",17]],
+      [["su",42],["la",24],["el",19],["más",15]],
+      [["participación",36],["creatividad",24],["aprendizaje",23],["interacción",17]],
+      [[".",65],["en",13],["durante",12],["con",10]]
+    ]
+  },
+  science:{
+    title:"Clase de ciencias", subtitle:"La materia, el grado y el tema ya orientan la respuesta.",
+    weak:"Diseña una actividad sobre el agua.",
+    rich:"Diseña una actividad para estudiantes de grado séptimo, en ciencias, sobre el ciclo del agua.",
+    tags:["grado 7°","ciencias","ciclo del agua","actividad"], metrics:["tema definido","nivel definido"], orbits:["ciencias","7°","agua"],
+    explain:"La IA puede priorizar conceptos y ejemplos coherentes con un curso concreto de ciencias.",
+    base:"Diseña una actividad para grado séptimo sobre el ciclo del agua",
+    seq:["experimental","de","45","minutos","para","observar","evaporación","y","condensación","."],
+    stages:[
+      [["experimental",42],["visual",26],["colaborativa",18],["breve",14]],
+      [["de",53],["sobre",17],["con",16],["para",14]],
+      [["45",49],["30",21],["60",17],["dos",13]],
+      [["minutos",61],["sesiones",15],["fases",13],["pasos",11]],
+      [["para",46],["con",23],["donde",17],["que",14]],
+      [["observar",41],["explicar",24],["analizar",20],["identificar",15]],
+      [["evaporación",44],["lluvia",22],["cambios",19],["procesos",15]],
+      [["y",58],["con",16],["mediante",14],["para",12]],
+      [["condensación",49],["precipitación",22],["nubes",16],["temperatura",13]],
+      [[".",68],["usando",13],["en",11],["con",8]]
+    ]
+  },
+  rural:{
+    title:"Escuela rural con restricciones", subtitle:"El contexto pedagógico y logístico reduce posibilidades poco viables.",
+    weak:"Haz una actividad sobre el ciclo del agua.",
+    rich:"Diseña una actividad para grado séptimo sobre el ciclo del agua en una escuela rural, con pocos dispositivos y 45 minutos disponibles.",
+    tags:["grado 7°","escuela rural","45 min","pocos dispositivos"], metrics:["restricciones claras","viabilidad alta"], orbits:["rural","45 min","materiales"],
+    explain:"El modelo recibe información que cambia decisiones reales: tiempo, recursos y contexto de implementación.",
+    base:"En contexto rural, diseña una actividad sobre el ciclo del agua",
+    seq:["práctica","usando","materiales","cotidianos","y","trabajo","en","equipos","de","cuatro","."],
+    stages:[
+      [["práctica",46],["simple",23],["colaborativa",18],["visual",13]],
+      [["usando",48],["con",22],["para",16],["mediante",14]],
+      [["materiales",54],["recursos",18],["botellas",15],["cartulinas",13]],
+      [["cotidianos",43],["reciclados",24],["simples",18],["disponibles",15]],
+      [["y",57],["para",17],["con",15],["que",11]],
+      [["trabajo",39],["observación",24],["discusión",21],["registro",16]],
+      [["en",51],["por",17],["de",16],["con",16]],
+      [["equipos",45],["grupos",24],["parejas",18],["estaciones",13]],
+      [["de",58],["con",16],["hasta",14],["por",12]],
+      [["cuatro",55],["tres",18],["cinco",15],["seis",12]],
+      [[".",70],["para",11],["y",10],["con",9]]
+    ]
+  },
+  math:{
+    title:"Matemáticas con ejemplos cotidianos", subtitle:"El contenido y el grado favorecen continuaciones manipulativas y visuales.",
+    weak:"Haz una actividad de fracciones.",
+    rich:"Diseña una actividad de matemáticas para grado quinto sobre fracciones usando ejemplos cotidianos.",
+    tags:["grado 5°","matemáticas","fracciones","cotidiano"], metrics:["contenido definido","ejemplos concretos"], orbits:["fracciones","5°","cotidiano"],
+    explain:"La IA puede orientar la actividad hacia representaciones apropiadas para el nivel y el contenido.",
+    base:"Diseña una actividad de fracciones para grado quinto",
+    seq:["manipulativa","con","objetos","cotidianos","para","representar","medios","y","cuartos","."],
+    stages:[
+      [["manipulativa",38],["visual",29],["lúdica",19],["breve",14]],
+      [["con",55],["para",18],["usando",15],["sobre",12]],
+      [["objetos",46],["figuras",22],["pizzas",18],["tarjetas",14]],
+      [["cotidianos",41],["reales",26],["recortables",18],["visuales",15]],
+      [["para",52],["y",18],["que",16],["donde",14]],
+      [["representar",43],["comparar",23],["armar",19],["dividir",15]],
+      [["medios",47],["mitades",24],["fracciones",18],["partes",11]],
+      [["y",59],["con",16],["más",13],["de",12]],
+      [["cuartos",51],["tercios",19],["octavos",17],["enteros",13]],
+      [[".",66],["en",13],["con",12],["usando",9]]
+    ]
+  }
+};
+
+const $ = id => document.getElementById(id);
+const scenario=$("scenario"), temperature=$("temperature"), topk=$("topk"), topp=$("topp");
+let step=0,timer=null,busy=false;
+
+
+const tokenExamples=[
+  "Explica la fotosíntesis para grado sexto.",
+  "Diseña una actividad de lectura para primaria.",
+  "Crea una evaluación formativa sobre ciudadanía digital."
+];
+let tokenExampleIndex=0;
+
+function renderManualTokens(){
+  const input=$("textInput").value.trim();
+  const toks=tokenize(input);
+  $("manualTokenizer").innerHTML=toks.map((x,i)=>`<span class="token">${i+1}. ${x}</span>`).join("");
+  $("manualTokenCount").textContent=toks.length
+    ? `Se generaron ${toks.length} unidades en esta tokenización simplificada.`
+    : "Escribe una frase para visualizar sus unidades.";
+}
+
+
+function D(){ return scenarios[scenario.value]; }
+
+function tokenize(text){
+  return text.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]+|[^\sA-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/g)||[];
+}
+
+function tempTransform(stage,temp){
+  const weights=stage.map(([w,p])=>[w,Math.pow(Math.max(p,0.0001)/100,1/temp)]);
+  const sum=weights.reduce((a,x)=>a+x[1],0)||1;
+  return weights.map(([w,v])=>[w,v/sum]);
+}
+
+function filteredDistribution(){
+  const d=D(), idx=Math.min(step,d.stages.length-1), stage=d.stages[idx];
+  let arr=tempTransform(stage,parseFloat(temperature.value)).sort((a,b)=>b[1]-a[1]);
+  const k=parseInt(topk.value,10);
+  const pLimit=parseFloat(topp.value);
+  arr=arr.map((x,i)=>({...{word:x[0],prob:x[1]},keep:i<k}));
+  let cumulative=0;
+  for(const item of arr){
+    if(!item.keep) continue;
+    if(cumulative>=pLimit){ item.keep=false; continue; }
+    cumulative+=item.prob;
+  }
+  let kept=arr.filter(x=>x.keep);
+  if(!kept.length){arr[0].keep=true;kept=[arr[0]];}
+  const keptSum=kept.reduce((a,x)=>a+x.prob,0)||1;
+  return arr.map(x=>({...x,norm:x.keep?x.prob/keptSum:0}));
+}
+
+function renderScenario(){
+  const d=D();
+  $("weakPrompt").textContent=d.weak;
+  $("richPrompt").textContent=d.rich;
+  $("sceneTitle").textContent=d.title;
+  $("sceneSubtitle").textContent=d.subtitle;
+  $("sceneExplain").textContent=d.explain;
+  $("orb1").textContent=d.orbits[0];$("orb2").textContent=d.orbits[1];$("orb3").textContent=d.orbits[2];
+  $("tags").innerHTML=d.tags.map(x=>`<span class="tag">${x}</span>`).join("");
+  $("richMetrics").innerHTML=d.metrics.map(x=>`<span class="metric">${x}</span>`).join("");
+  reset();
+}
+
+function renderControls(){
+  $("tempVal").textContent=parseFloat(temperature.value).toFixed(1);
+  $("kVal").textContent=topk.value;
+  $("pVal").textContent=parseFloat(topp.value).toFixed(1);
+  renderPrediction();
+}
+
+function renderPrediction(){
+  const d=D();
+  if(step>=d.stages.length){
+    $("probList").innerHTML='<div class="sub">La secuencia de demostración ha terminado.</div>';
+    $("candidates").innerHTML="";
+    $("stepLabel").textContent="Secuencia finalizada";
+    return;
+  }
+  const dist=filteredDistribution();
+  const chosen=dist.find(x=>x.keep);
+  $("stepLabel").textContent=`Paso ${step+1} · siguiente token`;
+  $("probList").innerHTML=dist.map(x=>`
+    <div class="prob-row ${x.keep?"":"filtered"} ${chosen&&x.word===chosen.word?"chosen":""}">
+      <div class="word">${x.word}</div>
+      <div class="bar"><div class="fill" style="width:${Math.round(x.norm*100)}%"></div></div>
+      <div>${x.keep?Math.round(x.norm*100)+"%":"—"}</div>
+    </div>`).join("");
+  $("candidates").innerHTML=dist.filter(x=>x.keep).map((x,i)=>`<span class="candidate ${i===0?"top":""}" data-word="${x.word}">${x.word} · ${Math.round(x.norm*100)}%</span>`).join("");
+  $("selectionExplain").innerHTML=`Con estos parámetros, <strong>${chosen.word}</strong> es la opción viable con mayor probabilidad para esta demostración.`;
+}
+
+function reset(){
+  if(timer){clearInterval(timer);timer=null;}
+  busy=false;step=0;
+  $("sequence").innerHTML=`${D().base} <span class="generated"></span><span class="cursor"></span>`;
+  $("next").disabled=false;$("auto").textContent="Generar secuencia";
+  renderPrediction();
+}
+
+function appendToken(){
+  if(busy) return;
+  const d=D();
+  if(step>=d.seq.length){$("next").disabled=true;return;}
+  busy=true;
+  const target=d.seq[step];
+  const chips=[...document.querySelectorAll(".candidate")];
+  const chip=chips.find(c=>c.dataset.word===target)||chips[0];
+  if(chip) chip.classList.add("selected");
+  $("selectionExplain").innerHTML=`Token elegido: <strong>${target}</strong>. Ahora este token pasa a formar parte del contexto para calcular el siguiente.`;
+  setTimeout(()=>{
+    const gen=document.querySelector(".generated");
+    gen.textContent += (gen.textContent?" ":" ")+target;
+    step++;
+    busy=false;
+    if(step>=d.seq.length){$("next").disabled=true;}
+    renderPrediction();
+  },420);
+}
+
+scenario.addEventListener("change",renderScenario);
+[temperature,topk,topp].forEach(el=>el.addEventListener("input",renderControls));
+$("next").addEventListener("click",appendToken);
+$("reset").addEventListener("click",reset);
+$("auto").addEventListener("click",()=>{
+  if(timer){clearInterval(timer);timer=null;$("auto").textContent="Generar secuencia";return;}
+  reset();$("auto").textContent="Pausar";
+  timer=setInterval(()=>{
+    if(step>=D().seq.length){
+      clearInterval(timer);timer=null;$("auto").textContent="Generar secuencia";return;
+    }
+    if(!busy) appendToken();
+  },900);
+});
+
+$("tokenizeBtn").addEventListener("click",renderManualTokens);
+$("exampleBtn").addEventListener("click",()=>{
+  $("textInput").value=tokenExamples[tokenExampleIndex%tokenExamples.length];
+  tokenExampleIndex++;
+  renderManualTokens();
+});
+renderManualTokens();
+
+renderScenario();renderControls();
+})();
+</script>
+</body>
+</html>

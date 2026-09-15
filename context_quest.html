@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Context Quest · v3 final</title>
+<style>
+:root{
+  --bg:#06101d;--bg2:#0a1730;--panel:rgba(12,23,43,.9);--panel2:rgba(18,31,56,.95);
+  --line:rgba(155,190,255,.16);--text:#eef5ff;--muted:#a5b6d1;--blue:#63a8ff;--cyan:#6ce8c6;
+  --violet:#927cff;--gold:#ffc96b;--danger:#ff7d91;--good:#6ce8c6
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh;
+  background:
+    radial-gradient(circle at 7% 0%,rgba(108,232,198,.13),transparent 22%),
+    radial-gradient(circle at 95% 5%,rgba(99,168,255,.18),transparent 24%),
+    radial-gradient(circle at 52% 100%,rgba(146,124,255,.13),transparent 20%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.13;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:34px 34px
+}
+main{max-width:1240px;margin:auto;padding:24px 18px 70px;position:relative}
+nav{display:flex;justify-content:space-between;align-items:center;gap:12px}
+nav a{color:#bdd5ff;text-decoration:none;font-weight:850}
+.version{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:.8rem;font-weight:850;color:var(--cyan)}
+.hero{
+  margin-top:16px;border:1px solid var(--line);border-radius:30px;padding:30px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  box-shadow:0 22px 70px rgba(0,0,0,.28);position:relative;overflow:hidden
+}
+.hero:after{
+  content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-95px;top:-110px;
+  background:radial-gradient(circle,rgba(108,232,198,.15),transparent 66%)
+}
+.kicker{display:inline-flex;gap:8px;align-items:center;color:var(--cyan);font-weight:900;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase}
+.kicker:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px rgba(108,232,198,.8)}
+h1{font-size:clamp(2.3rem,5vw,4.4rem);line-height:.98;margin:8px 0 12px}
+.hero p{max-width:900px;color:var(--muted);line-height:1.75;font-size:1.04rem}
+.clase{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:20px}
+.clase div{
+  border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center;background:rgba(255,255,255,.035);font-size:.86rem
+}
+.clase strong{display:block;font-size:1.2rem;color:#dcedff}
+.game{margin-top:18px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:22px;box-shadow:0 16px 50px rgba(0,0,0,.24)}
+.dashboard{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+.mission,.score{
+  border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.035);padding:18px
+}
+.eyebrow{color:#aac8fb;font-size:.8rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.mission h2{margin:7px 0 8px;font-size:1.55rem}
+.mission p{margin:0;color:var(--muted);line-height:1.65}
+.score-top{display:flex;justify-content:space-between;gap:14px;align-items:end}
+.big{font-size:3rem;line-height:1;font-weight:950;color:var(--cyan)}
+.progress{height:12px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin:14px 0 12px}
+.progress>div{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:.35s}
+.dim-mini{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.dim-mini div{
+  border:1px solid var(--line);border-radius:14px;padding:9px 6px;text-align:center;background:rgba(255,255,255,.03)
+}
+.dim-mini span{display:block;color:var(--muted);font-size:.72rem}.dim-mini strong{font-size:.95rem}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.category{
+  border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.025);padding:17px;position:relative;overflow:hidden
+}
+.category:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--blue),var(--violet));opacity:.65}
+.category h3{margin:0 0 5px;font-size:1.02rem}
+.hint{color:var(--muted);font-size:.86rem;line-height:1.45;margin:0 0 11px}
+.options{display:grid;gap:9px}
+.option{
+  width:100%;text-align:left;padding:12px 13px;border-radius:14px;border:1px solid var(--line);background:rgba(8,17,34,.62);
+  color:var(--text);font:inherit;cursor:pointer;transition:.18s
+}
+.option:hover{transform:translateY(-1px);border-color:rgba(108,232,198,.28)}
+.option.selected{background:linear-gradient(180deg,rgba(108,232,198,.15),rgba(99,168,255,.1));border-color:rgba(108,232,198,.34);box-shadow:inset 0 0 0 1px rgba(108,232,198,.06)}
+.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{
+  border:0;border-radius:14px;padding:12px 16px;font:inherit;font-weight:900;cursor:pointer
+}
+.primary{background:linear-gradient(90deg,var(--cyan),#39d8b5);color:#06231d}
+.secondary{background:rgba(255,255,255,.07);color:var(--text)}
+.result{
+  display:none;margin-top:18px;border:1px solid var(--line);border-radius:22px;padding:18px;background:rgba(255,255,255,.03)
+}
+.result h3{margin:0 0 8px}.result p{color:var(--muted);line-height:1.65}
+.diagnostics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}
+.diag{
+  border:1px solid var(--line);border-radius:16px;padding:12px;background:rgba(255,255,255,.025);min-height:112px
+}
+.diag strong{display:block;font-size:1.05rem;margin-bottom:4px}.diag span{font-size:.79rem;color:var(--muted);line-height:1.35}
+.meter{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px}
+.meter div{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.prompt-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.promptbox{
+  border:1px solid var(--line);border-radius:18px;padding:15px;background:#081527;min-height:170px
+}
+.promptbox.bad{border-color:rgba(255,125,145,.18)}.promptbox.good{border-color:rgba(108,232,198,.18)}
+.promptbox strong{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.promptbox pre{white-space:pre-wrap;margin:0;font:inherit;color:#dbe9ff;line-height:1.65}
+.badge-dot{width:8px;height:8px;border-radius:50%}.bad-dot{background:var(--danger)}.good-dot{background:var(--good)}
+.complete{
+  display:none;margin-top:18px;padding:18px;border-radius:22px;border:1px solid rgba(255,201,107,.2);background:rgba(255,201,107,.07)
+}
+.complete strong{color:#ffe1a5}
+@media(max-width:930px){
+  .dashboard,.grid,.prompt-compare{grid-template-columns:1fr}
+  .clase,.diagnostics{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main>
+<nav>
+  <a href="index.html">← Laboratorio</a>
+  <span class="version">CONTEXT QUEST · v3 FINAL</span>
+</nav>
+
+<section class="hero">
+  <div class="kicker">Ingeniería de contexto</div>
+  <h1>Context Quest</h1>
+  <p>
+    Convierte solicitudes vagas en encargos útiles para una IA. Cada misión te obliga a decidir qué información
+    realmente cambia la calidad de una respuesta educativa.
+  </p>
+  <div class="clase">
+    <div><strong>C</strong>Contexto</div>
+    <div><strong>L</strong>Logro</div>
+    <div><strong>A</strong>Audiencia</div>
+    <div><strong>S</strong>Situación</div>
+    <div><strong>E</strong>Especificaciones</div>
+  </div>
+</section>
+
+<section class="game">
+  <div class="dashboard">
+    <div class="mission">
+      <div class="eyebrow">Misión <span id="mnum">1</span> de 3</div>
+      <h2 id="mtitle"></h2>
+      <p id="mbrief"></p>
+    </div>
+    <div class="score">
+      <div class="score-top">
+        <div>
+          <div class="eyebrow">Puntaje de contexto</div>
+          <div class="big"><span id="score">0</span>/100</div>
+        </div>
+        <div style="text-align:right;color:var(--muted);font-size:.82rem">Completa CLASE<br>y luego evalúa</div>
+      </div>
+      <div class="progress"><div id="progress"></div></div>
+      <div class="dim-mini">
+        <div><span>C</span><strong id="mini0">—</strong></div>
+        <div><span>L</span><strong id="mini1">—</strong></div>
+        <div><span>A</span><strong id="mini2">—</strong></div>
+        <div><span>S</span><strong id="mini3">—</strong></div>
+        <div><span>E</span><strong id="mini4">—</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="categories" class="grid"></div>
+
+  <div class="buttons">
+    <button id="evaluate" class="primary">Evaluar mi contexto</button>
+    <button id="nextMission" class="secondary" style="display:none">Siguiente misión →</button>
+    <button id="restart" class="secondary">Reiniciar juego</button>
+  </div>
+
+  <section id="result" class="result">
+    <h3 id="resultTitle"></h3>
+    <p id="resultText"></p>
+    <div id="diagnostics" class="diagnostics"></div>
+    <div class="prompt-compare">
+      <div class="promptbox bad">
+        <strong><span class="badge-dot bad-dot"></span>Antes: solicitud vaga</strong>
+        <pre id="beforePrompt"></pre>
+      </div>
+      <div class="promptbox good">
+        <strong><span class="badge-dot good-dot"></span>Después: contexto construido</strong>
+        <pre id="afterPrompt"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="complete" class="complete"></section>
+</section>
+</main>
+
+<script>
+(() => {
+const missions=[
+{
+  title:"Ciencias con pocos recursos",
+  brief:"Una profesora quiere trabajar el ciclo del agua. Construye un contexto que permita a la IA proponer una experiencia viable y pedagógicamente útil.",
+  before:"Hazme una clase sobre el ciclo del agua.",
+  cats:[
+    {key:"C",name:"Contexto",opts:[["Institución rural con conectividad limitada",20,"Define un entorno real que cambia la viabilidad de las propuestas."],["Colegio sin más información",8,"Aporta algo de contexto, pero deja demasiadas condiciones abiertas."],["Laboratorio universitario de alta complejidad",0,"No corresponde a la situación planteada."]]},
+    {key:"L",name:"Logro",opts:[["Comprender evaporación, condensación y precipitación mediante observación",20,"Expresa un aprendizaje observable y relacionado con el tema."],["Aprender todo sobre el agua",6,"Es demasiado amplio para orientar una actividad concreta."],["Memorizar 30 definiciones",4,"Es específico, pero reduce el aprendizaje a recuerdo mecánico."]]},
+    {key:"A",name:"Audiencia",opts:[["Estudiantes de grado séptimo con conocimientos básicos del ciclo del agua",20,"Delimita nivel y punto de partida."],["Personas",4,"No permite adaptar lenguaje ni complejidad."],["Investigadores doctorales",0,"No corresponde al público de la misión."]]},
+    {key:"S",name:"Situación",opts:[["Diseñar una actividad práctica colaborativa",20,"Define claramente qué producto se espera de la IA."],["Escribir información",5,"La tarea es demasiado genérica."],["Crear un curso de 40 horas",1,"La escala no corresponde a la misión."]]},
+    {key:"E",name:"Especificaciones",opts:[["45 minutos, equipos de 4, materiales cotidianos y sin depender de internet",20,"Incluye restricciones que cambian directamente el diseño."],["Que sea buena",4,"Es una preferencia ambigua, no un criterio operativo."],["Sin límites de tiempo ni recursos",2,"No ayuda a garantizar viabilidad."]]}
+  ]
+},
+{
+  title:"Evaluación formativa de lectura",
+  brief:"Un docente de primaria quiere usar IA para diseñar una actividad de evaluación que permita identificar comprensión, no solo memoria.",
+  before:"Hazme preguntas de lectura.",
+  cats:[
+    {key:"C",name:"Contexto",opts:[["Clase de Lengua Castellana en básica primaria",20,"Ubica el área y el nivel educativo."],["Una clase cualquiera",5,"No define el campo de aplicación."],["Seminario de posgrado",0,"No corresponde al escenario."]]},
+    {key:"L",name:"Logro",opts:[["Inferir información y justificar respuestas usando evidencias del texto",20,"Permite evaluar comprensión y argumentación."],["Sacar buena nota",3,"No describe un aprendizaje."],["Recitar el texto",5,"Evalúa principalmente memoria."]]},
+    {key:"A",name:"Audiencia",opts:[["Estudiantes de grado quinto con niveles de lectura diversos",20,"Permite adaptar dificultad y apoyos."],["Lectores expertos",2,"No corresponde al grupo."],["Sin definir audiencia",0,"Elimina una variable pedagógica esencial."]]},
+    {key:"S",name:"Situación",opts:[["Crear una actividad de evaluación formativa con retroalimentación",20,"Define propósito y tipo de producto."],["Crear preguntas difíciles",7,"Indica dificultad, pero no propósito pedagógico."],["Hacer un examen universitario",0,"No corresponde al nivel."]]},
+    {key:"E",name:"Especificaciones",opts:[["30 minutos, 6 preguntas, incluir criterios de valoración y apoyos",20,"Aclara duración, formato y criterios."],["Muchas preguntas",5,"No es una especificación medible."],["Sin indicar duración ni formato",2,"Deja decisiones importantes abiertas."]]}
+  ]
+},
+{
+  title:"Ciudadanía digital para docentes",
+  brief:"Un formador quiere que un grupo de profesores analice críticamente el uso de IA en el aula y tome decisiones responsables.",
+  before:"Haz una actividad sobre IA responsable.",
+  cats:[
+    {key:"C",name:"Contexto",opts:[["Capacitación docente sobre IA generativa y ciudadanía digital",20,"Define el espacio formativo y su foco."],["Reunión general",5,"Es demasiado amplio."],["Curso de programación avanzada",1,"Desvía la intención pedagógica."]]},
+    {key:"L",name:"Logro",opts:[["Analizar riesgos, beneficios y criterios para un uso pedagógico responsable",20,"Define un aprendizaje crítico y transferible."],["Aprender IA",6,"Es demasiado general."],["Usar muchas herramientas",4,"Confunde cantidad de herramientas con aprendizaje."]]},
+    {key:"A",name:"Audiencia",opts:[["Docentes de distintas áreas con niveles diversos de experiencia en IA",20,"Permite anticipar diversidad de conocimientos previos."],["Expertos en machine learning",2,"No corresponde al grupo."],["Usuarios genéricos",4,"No permite contextualizar bien el lenguaje ni los casos."]]},
+    {key:"S",name:"Situación",opts:[["Diseñar un dilema de aula y una discusión guiada",20,"Genera una experiencia activa alineada con pensamiento crítico."],["Dar una conferencia larga",6,"Puede informar, pero reduce participación y análisis."],["Listar herramientas",4,"No responde al aprendizaje central."]]},
+    {key:"E",name:"Especificaciones",opts:[["20 minutos, grupos de 4, incluir preguntas de decisión y cierre reflexivo",20,"Vuelve la actividad concreta y ejecutable."],["Sin restricciones",2,"No orienta la implementación."],["Lo más técnico posible",3,"No necesariamente corresponde al público ni al objetivo."]]}
+  ]
+}
+];
+
+let mi=0,selections={},scores=[];
+const $=id=>document.getElementById(id);
+
+function render(){
+  selections={};
+  const m=missions[mi];
+  $("mnum").textContent=mi+1;$("mtitle").textContent=m.title;$("mbrief").textContent=m.brief;
+  $("score").textContent="0";$("progress").style.width="0%";
+  [0,1,2,3,4].forEach(i=>$("mini"+i).textContent="—");
+  $("result").style.display="none";$("nextMission").style.display="none";$("complete").style.display="none";
+  $("categories").innerHTML="";
+  m.cats.forEach((cat,ci)=>{
+    const sec=document.createElement("section");sec.className="category";
+    sec.innerHTML=`<h3>${cat.key} · ${cat.name}</h3><p class="hint">Elige la opción que más ayuda a la IA a tomar una buena decisión educativa.</p>`;
+    const opts=document.createElement("div");opts.className="options";
+    cat.opts.forEach((opt,oi)=>{
+      const b=document.createElement("button");b.type="button";b.className="option";b.textContent=opt[0];
+      b.addEventListener("click",()=>{
+        selections[ci]=oi;
+        [...opts.children].forEach(x=>x.classList.remove("selected"));b.classList.add("selected");
+        updateProgress();
+      });
+      opts.appendChild(b);
+    });
+    sec.appendChild(opts);$("categories").appendChild(sec);
+  });
+}
+
+function updateProgress(){
+  const count=Object.keys(selections).length;
+  $("progress").style.width=(count/5*100)+"%";
+  [0,1,2,3,4].forEach(i=>$("mini"+i).textContent=selections[i]!==undefined?"✓":"—");
+}
+
+function total(){
+  const m=missions[mi];let s=0;
+  Object.entries(selections).forEach(([ci,oi])=>s+=m.cats[+ci].opts[+oi][1]);
+  return s;
+}
+
+function promptFromSelections(){
+  const m=missions[mi],chosen=m.cats.map((c,i)=>c.opts[selections[i]][0]);
+  return `Actúa como diseñador instruccional.
+
+Contexto educativo: ${chosen[0]}.
+Logro de aprendizaje: ${chosen[1]}.
+Audiencia: ${chosen[2]}.
+Situación o tarea: ${chosen[3]}.
+Especificaciones: ${chosen[4]}.
+
+Diseña una propuesta aplicable al aula y coherente con estas condiciones. Explica brevemente por qué tus decisiones pedagógicas son adecuadas.`;
+}
+
+function evaluate(){
+  if(Object.keys(selections).length<5){
+    $("result").style.display="block";
+    $("resultTitle").textContent="Contexto incompleto";
+    $("resultText").textContent="Completa las cinco dimensiones de CLASE antes de evaluar.";
+    $("diagnostics").innerHTML="";$("beforePrompt").textContent="";$("afterPrompt").textContent="";
+    return;
+  }
+  const m=missions[mi],s=total();
+  scores[mi]=s;$("score").textContent=s;$("progress").style.width=s+"%";
+  let title,text;
+  if(s>=90){title="🏆 Contexto excelente";text="Redujiste gran parte de la ambigüedad y entregaste información que cambia decisiones pedagógicas reales."}
+  else if(s>=65){title="✅ Buen contexto";text="La IA ya tendría una base útil, aunque todavía existen variables que podrían definirse mejor."}
+  else{title="🧭 Contexto débil";text="La solicitud aún deja demasiadas decisiones importantes en manos de la IA. Revisa las dimensiones con menor puntaje."}
+  $("resultTitle").textContent=title;$("resultText").textContent=text;
+
+  $("diagnostics").innerHTML=m.cats.map((cat,i)=>{
+    const opt=cat.opts[selections[i]],pts=opt[1];
+    return `<div class="diag"><strong>${cat.key} · ${pts}/20</strong><span>${opt[2]}</span><div class="meter"><div style="width:${pts/20*100}%"></div></div></div>`;
+  }).join("");
+
+  $("beforePrompt").textContent=m.before;
+  $("afterPrompt").textContent=promptFromSelections();
+  $("result").style.display="block";
+  if(mi<missions.length-1)$("nextMission").style.display="inline-block";
+  else finish();
+  $("result").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function finish(){
+  const avg=Math.round(scores.reduce((a,b)=>a+(b||0),0)/missions.length);
+  $("complete").style.display="block";
+  $("complete").innerHTML=`<strong>🎓 Misión completa · Promedio ${avg}/100</strong><br><span style="color:var(--muted)">Has completado las tres situaciones. La idea clave no es escribir más, sino dar a la IA la información que cambia una decisión pedagógica.</span>`;
+}
+
+$("evaluate").addEventListener("click",evaluate);
+$("nextMission").addEventListener("click",()=>{mi++;render();window.scrollTo({top:0,behavior:"smooth"})});
+$("restart").addEventListener("click",()=>{mi=0;scores=[];render();window.scrollTo({top:0,behavior:"smooth"})});
+render();
+})();
+</script>
+</body>
+</html>
